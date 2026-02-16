@@ -1,1 +1,89 @@
-﻿<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"/><title>RDN Supplies AI</title></head><body><div id="root"></div></body></html>
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>RDN Supplies AI - OEM Registry</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f5; }
+        header { background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%); color: white; padding: 2rem; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        h1 { font-size: 2rem; margin-bottom: 0.5rem; }
+        main { max-width: 1400px; margin: 2rem auto; padding: 0 20px; }
+        .stats { background: white; padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        table { width: 100%; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        th { background: #f3f4f6; padding: 1rem; text-align: left; font-weight: 600; color: #374151; text-transform: uppercase; font-size: 0.875rem; }
+        td { padding: 1rem; border-top: 1px solid #e5e7eb; }
+        tr:hover { background: #f9fafb; }
+        .loading { text-align: center; padding: 3rem; background: white; border-radius: 8px; }
+        .badge { display: inline-block; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; }
+        .badge-verified { background: #d1fae5; color: #065f46; }
+        .badge-distributor { background: #fef3c7; color: #92400e; }
+        .score { display: flex; align-items: center; gap: 0.5rem; }
+        .score-bar { flex: 1; height: 8px; background: #e5e7eb; border-radius: 4px; overflow: hidden; }
+        .score-fill { height: 100%; background: linear-gradient(90deg, #f59e0b, #10b981); }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>🏭 RDN Supplies AI™</h1>
+        <p>Global OEM Master Registry</p>
+    </header>
+    <main>
+        <div class="stats" id="stats">
+            <strong>Total OEMs:</strong> <span id="total">Loading...</span>
+        </div>
+        <div id="content" class="loading">Loading OEM database...</div>
+    </main>
+    <script>
+        fetch('/api/oems')
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('total').textContent = data.total;
+                
+                const getBadgeClass = (status) => {
+                    return status === 'VERIFIED' ? 'badge-verified' : 'badge-distributor';
+                };
+                
+                const html = `
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Company Name</th>
+                                <th>Website</th>
+                                <th>Country</th>
+                                <th>Region</th>
+                                <th>Status</th>
+                                <th>Score</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${data.data.map(oem => `
+                                <tr>
+                                    <td><strong>${oem.company_name}</strong></td>
+                                    <td>${oem.website ? `<a href="${oem.website}" target="_blank">Visit</a>` : '-'}</td>
+                                    <td>${oem.hq_country || '-'}</td>
+                                    <td>${oem.hq_region || '-'}</td>
+                                    <td><span class="badge ${getBadgeClass(oem.oem_status)}">${oem.oem_status}</span></td>
+                                    <td>
+                                        <div class="score">
+                                            <div class="score-bar">
+                                                <div class="score-fill" style="width: ${oem.reliability_score}%"></div>
+                                            </div>
+                                            <span>${oem.reliability_score}</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+                document.getElementById('content').innerHTML = html;
+            })
+            .catch(err => {
+                document.getElementById('content').innerHTML = '<p style="color: red;">Error loading data. Check if backend is running.</p>';
+                console.error(err);
+            });
+    </script>
+</body>
+</html>
